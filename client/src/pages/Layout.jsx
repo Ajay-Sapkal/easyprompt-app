@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import { assets } from '../assets/assets'
 import { useNavigate } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
@@ -9,11 +9,25 @@ import { useUser, SignIn } from '@clerk/clerk-react'
 
 const Layout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const[sidebar, setSidebar] = useState(false);
   const { user } = useUser();
 
+  // Apply different CSS classes to body based on route
+  useEffect(() => {
+    // For AI pages, we want fixed layout without body scroll
+    document.body.style.overflow = 'hidden';
+    document.body.style.height = '100vh';
+    
+    return () => {
+      // Cleanup when component unmounts
+      document.body.style.overflow = '';
+      document.body.style.height = '';
+    };
+  }, [location]);
+
   return user ? (
-    <div className='flex flex-col items-start justify-start h-screen'>
+    <div className='flex flex-col h-screen overflow-hidden'>
 
       <nav className='w-full px-8 min-h-14 flex items-center justify-between border-b border-gray-200'>
         <img className='cursor-pointer w-32 sm:w-44' src={assets.logo} alt="" onClick={() => navigate('/')}/>
@@ -23,9 +37,9 @@ const Layout = () => {
         }
       </nav>
 
-      <div className='flex-1 w-full flex h-[calc(100vh-64px)]'>
+      <div className='flex flex-1 overflow-hidden'>
         <Sidebar sidebar={sidebar} setSidebar={setSidebar} />
-        <div className='flex-1 bg-[#F4F7FB]'>
+        <div className='flex-1 bg-[#F4F7FB] overflow-y-auto'>
           <Outlet />
         </div>
       </div>
