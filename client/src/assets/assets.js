@@ -1,3 +1,4 @@
+// Importing image and SVG assets for use throughout the app
 import logo from "./logo.svg";
 import gradientBackground from "./gradientBackground.png";
 import user_group from "./user_group.png";
@@ -5,11 +6,16 @@ import star_icon from "./star_icon.svg";
 import star_dull_icon from "./star_dull_icon.svg";
 import profile_img_1 from "./profile_img_1.png";
 import arrow_icon from "./arrow_icon.svg";
+
+// Importing icon components from lucide-react library
 import { SquarePen, Hash, Image, Eraser, Scissors, FileText } from 'lucide-react'
+
+// Importing AI-generated image assets
 import ai_gen_img_1 from "./ai_gen_img_1.png";
 import ai_gen_img_2 from "./ai_gen_img_2.png";
 import ai_gen_img_3 from "./ai_gen_img_3.png";
 
+// Exporting all imported assets as a single object for easy access
 export const assets = {
     logo,
     gradientBackground,
@@ -20,13 +26,14 @@ export const assets = {
     arrow_icon,
 };
 
+// Array of AI tool data for displaying available AI features in the UI
 export const AiToolsData = [
     {
-        title: 'AI Article Writer',
-        description: 'Generate high-quality, engaging articles on any topic with our AI writing technology.',
-        Icon: SquarePen,
-        bg: { from: '#3588F2', to: '#0BB0D7' },
-        path: '/ai/write-article'
+        title: 'AI Article Writer', // Tool name
+        description: 'Generate high-quality, engaging articles on any topic with our AI writing technology.', // Tool description
+        Icon: SquarePen, // Icon component for the tool
+        bg: { from: '#3588F2', to: '#0BB0D7' }, // Background gradient colors
+        path: '/ai/write-article' // Route path for the tool
     },
     {
         title: 'Blog Title Generator',
@@ -65,13 +72,14 @@ export const AiToolsData = [
     }
 ]
 
+// Dummy testimonial data for displaying user feedback in the UI
 export const dummyTestimonialData = [
     {
-        image: assets.profile_img_1,
-        name: 'John Doe',
-        title: 'Marketing Director, TechCorp',
-        content: 'ContentAI has revolutionized our content workflow. The quality of the articles is outstanding, and it saves us hours of work every week.',
-        rating: 4,
+        image: assets.profile_img_1, // User profile image
+        name: 'John Doe', // User name
+        title: 'Marketing Director, TechCorp', // User job title and company
+        content: 'ContentAI has revolutionized our content workflow. The quality of the articles is outstanding, and it saves us hours of work every week.', // Testimonial text
+        rating: 4, // User rating (out of 5)
     },
     {
         image: assets.profile_img_1,
@@ -90,17 +98,18 @@ export const dummyTestimonialData = [
 ]
 
 
+// Dummy creation data for displaying sample AI-generated content (blog titles, articles, etc.)
 export const dummyCreationData = [
     {
-        "id": 9,
-        "user_id": "user_2yMX02PRbyMtQK6PebpjnxvRNIA",
-        "prompt": "Generate a blog title for the keyword blog in the category Technology.",
-        "content": "Here are a few blog title options for a technology blog, playing with different angles:\n\n**General & Broad:**\n\n*   The Tech Blog: News, Reviews, and Insights\n*   Technology Today: Your Daily Dose of Tech\n*   The Future is Now: Exploring the World of Technology\n*   Tech Talk: Unpacking the Latest Innovations\n\n**More Specific & Intriguing:**\n\n*   Decoding Tech: Making Sense of the Digital World\n*   Beyond the Gadgets: The",
-        "type": "blog-title",
-        "publish": false,
-        "likes": [],
-        "created_at": "2025-07-01T11:09:50.492Z",
-        "updated_at": "2025-07-01T11:09:50.492Z"
+        "id": 9, // Unique ID for the creation
+        "user_id": "user_2yMX02PRbyMtQK6PebpjnxvRNIA", // User who created the content
+        "prompt": "Generate a blog title for the keyword blog in the category Technology.", // Prompt given to AI
+        "content": "Here are a few blog title options for a technology blog, playing with different angles:\n\n**General & Broad:**\n\n*   The Tech Blog: News, Reviews, and Insights\n*   Technology Today: Your Daily Dose of Tech\n*   The Future is Now: Exploring the World of Technology\n*   Tech Talk: Unpacking the Latest Innovations\n\n**More Specific & Intriguing:**\n\n*   Decoding Tech: Making Sense of the Digital World\n*   Beyond the Gadgets: The", // AI-generated content
+        "type": "blog-title", // Type of content
+        "publish": false, // Whether the content is published
+        "likes": [], // Array of user IDs who liked the content
+        "created_at": "2025-07-01T11:09:50.492Z", // Creation timestamp
+        "updated_at": "2025-07-01T11:09:50.492Z" // Last update timestamp
     },
     {
         "id": 8,
@@ -127,20 +136,21 @@ export const dummyCreationData = [
 ]
 
 
+// Dummy published creation data for displaying sample AI-generated images that are marked as published
 export const dummyPublishedCreationData = [
     {
-        "id": 1,
-        "user_id": "user_2yMX02PRbyMtQK6PebpjnxvRNIA",
-        "prompt": "Generate an image of A Boy is on Boat , and fishing in the style Anime style.",
-        "content": ai_gen_img_1,
-        "type": "image",
-        "publish": true,
-        "likes": [
+        "id": 1, // Unique ID for the published creation
+        "user_id": "user_2yMX02PRbyMtQK6PebpjnxvRNIA", // User who created the image
+        "prompt": "Generate an image of A Boy is on Boat , and fishing in the style Anime style.", // Prompt given to AI
+        "content": ai_gen_img_1, // AI-generated image asset
+        "type": "image", // Type of content
+        "publish": true, // Whether the content is published
+        "likes": [ // Array of user IDs who liked the content
             "user_2yMX02PRbyMtQK6PebpjnxvRNIA",
             "user_2yaW5EHzeDfQbXdAJWYFnZo2bje"
         ],
-        "created_at": "2025-06-19T09:02:25.035Z",
-        "updated_at": "2025-06-19T09:58:37.552Z",
+        "created_at": "2025-06-19T09:02:25.035Z", // Creation timestamp
+        "updated_at": "2025-06-19T09:58:37.552Z", // Last update timestamp
     },
     {
         "id": 2,
@@ -168,6 +178,6 @@ export const dummyPublishedCreationData = [
         ],
         "created_at": "2025-06-23T11:29:23.351Z",
         "updated_at": "2025-06-23T11:29:44.434Z",
-        "__v": 1
+        "__v": 1 // Version key (optional, for database use)
     },
 ]
