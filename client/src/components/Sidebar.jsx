@@ -60,7 +60,7 @@ const Sidebar = ({sidebar, setSidebar}) => {
                             end={to == '/ai'} // Only exact match for dashboard
                             onClick={() => setSidebar(false)} // Close sidebar on link click (mobile)
                             className={({isActive}) =>
-                                `px-3 py-3 md:px-3.5 md:py-2.5 flex items-center gap-3 rounded mb-1 transition-all duration-150
+                                `px-3 py-3 md:px-3.5 md:py-2.5 flex items-center gap-3 rounded mb-1 transition-colors duration-0 transition-transform duration-150
                                 ${isActive ? 'bg-gradient-to-r from-[#3C81F6] to-[#9234EA] text-white scale-100' : 'text-black hover:scale-105 hover:bg-gray-100'}
                                 `
                             }
@@ -68,7 +68,7 @@ const Sidebar = ({sidebar, setSidebar}) => {
                             {({isActive}) => (
                                 <>
                                     {/* Icon and label for each nav item; icon color changes if active */}
-                                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : ''}`} />
+                                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : ''} transition-none`} />
                                     {label}
                                 </>
                             )}
