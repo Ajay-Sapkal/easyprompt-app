@@ -4,6 +4,8 @@ import sql from "../configs/db.js";
 import { clerkClient } from "@clerk/express";
 import axios from "axios";
 import {v2 as cloudinary} from "cloudinary";
+import fs from "fs";
+import pdf from "pdf-parse/lib/pdf-parse.js";
 
 // Initialize OpenAI client for Gemini API
 const AI = new OpenAI({
@@ -191,6 +193,188 @@ export const generateImage = async (req, res) => {
         res.json({
             success: true,
             content: secure_url
+        });
+
+    } catch (error) {
+        console.log(error.message);
+        res.json({
+            success: false,
+            message: error.message
+        });
+    }
+}
+
+
+
+// This function removes the background from an uploaded image using Cloudinary's background removal feature.
+// Only premium users can use this feature.
+export const removeImageBackground = async (req, res) => {
+    try {
+        const { userId } = req.auth; // Get the user's ID from authentication
+        const {image} = req.file;    // Get the uploaded image file
+        const plan = req.plan;       // Get the user's plan (free or premium)
+
+        // Only premium users can generate images
+        // Only premium users can generate images
+        if (plan !== 'premium') {
+            return res.json({
+                success: false,
+                message: "Free users cannot generate images. Upgrade to premium for this feature."
+            });
+        }
+
+        
+
+        // Upload the image to Cloudinary and apply background removal transformation
+        const {secure_url} = await cloudinary.uploader.upload(image.path, {
+            transformation: [
+                {
+                    effect: "background_removal",
+                    background_removal: "remove_the_background"
+                }
+            ]
+        })
+
+        // Save the new image URL in the database
+        await sql`
+            INSERT INTO creations (user_id, prompt, content, type)
+            VALUES (${userId}, 'Remove Background from image', ${secure_url}, 'image')
+        `;
+
+        // Send the image URL back to the client
+        // Send the new image URL back to the client
+        res.json({
+            success: true,
+            content: secure_url
+        });
+
+    } catch (error) {
+        console.log(error.message);
+        res.json({
+            success: false,
+            message: error.message
+        });
+    }
+}
+
+
+// This function removes a specified object from an uploaded image using Cloudinary's generative removal feature.
+// Only premium users can use this feature.
+export const removeImageObject = async (req, res) => {
+    try {
+        const { userId } = req.auth; // Get the user's ID from authentication
+        const { object } = req.body; // Get the object to remove from the request body
+        const {image} = req.file;    // Get the uploaded image file
+        const plan = req.plan;       // Get the user's plan (free or premium)
+
+        // Only premium users can generate images
+        // Only premium users can generate images
+        if (plan !== 'premium') {
+            return res.json({
+                success: false,
+                message: "Free users cannot generate images. Upgrade to premium for this feature."
+            });
+        }
+
+
+        
+
+        // Upload the image to Cloudinary and get its public ID
+        const {public_id} = await cloudinary.uploader.upload(image.path)
+
+        // Generate a new image URL with the specified object removed using Cloudinary's transformation
+        const imageURL = cloudinary.url(public_id, {
+            transformation: [
+                {
+                    effect: `gen_remove: ${object}`, // Remove the specified object
+                }
+            ],
+            resource_type: 'image',
+        })
+
+        // Save the new image URL in the database
+        await sql`
+            INSERT INTO creations (user_id, prompt, content, type)
+            VALUES (${userId}, ${`Removed ${object} from image`}, ${imageURL}, 'image')
+        `;
+
+        // Send the image URL back to the client
+        // Send the new image URL back to the client
+        res.json({
+            success: true,
+            content: imageURL
+        });
+
+    } catch (error) {
+        console.log(error.message);
+        res.json({
+            success: false,
+            message: error.message
+        });
+    }
+}
+
+
+
+
+
+// This function reviews a user's uploaded resume (PDF), generates AI feedback, and saves the review in the database.
+// Only premium users can use this feature.
+export const resumeReview = async (req, res) => {
+    try {
+        const { userId } = req.auth; // Get the user's ID from authentication
+        const {resume} = req.file;   // Get the uploaded resume file
+        const plan = req.plan;       // Get the user's plan (free or premium)
+
+        // Only premium users can generate images
+        // Only premium users can use this feature
+        if (plan !== 'premium') {
+            return res.json({
+                success: false,
+                message: "Free users cannot generate images. Upgrade to premium for this feature."
+            });
+        }
+
+        // Check if the resume file size exceeds 5MB
+        if(resume.size > 5 * 1024 * 1024){
+            return res.json({
+                success: false,
+                message: "Resume file size exceeds 5MB limit."
+            });
+        } 
+
+        // Read the resume file into a buffer
+        const dataBuffer = fs.readFileSync(resume.path);
+        // Parse the PDF to extract text content
+        const pdfData = await pdf(dataBuffer);
+
+        // Create a prompt for the AI to review the resume
+        const prompt = `Review the following resume and provide constructive feedback on its strengths, weaknesses, and areas for improvement. Resume content:\n\n${pdfData.text}`;
+
+        // Ask the AI to generate feedback for the resume
+        const response = await AI.chat.completions.create({
+            model: "gemini-2.0-flash",
+            messages: [
+                {
+                    role: "user",
+                    content: prompt,
+                },
+            ],
+            temperature: 0.7,
+            max_tokens: 1000,
+        });
+
+        const content = response.choices[0].message.content; // Get the feedback text from the AI response
+        // Save the feedback in the database
+        await sql`
+            INSERT INTO creations (user_id, prompt, content, type)
+            VALUES (${userId}, 'review the uploaded resume', ${content}, 'resume-review')
+        `;
+
+        // Send the feedback back to the client
+        res.json({
+            success: true,
+            content
         });
 
     } catch (error) {
