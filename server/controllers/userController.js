@@ -5,7 +5,7 @@ import sql from "../configs/db.js";
 // This function gets all creations (articles, images, etc.) made by the logged-in user, sorted by newest first.
 export const getUserCreations = async (req, res) => {
     try {
-        const {userId} = req.auth; // Get the user's ID from authentication
+        const {userId} = req.auth(); // Get the user's ID from authentication
 
         // Query the database for all creations by this user, newest first
         const creations = await sql`
@@ -52,7 +52,7 @@ export const getPublishedCreations = async (req, res) => {
 export const toggleLikeCreation = async (req, res) => {
     try {
 
-        const {userId} = req.auth; // Get the user's ID from authentication
+        const {userId} = req.auth(); // Get the user's ID from authentication
         const {id} = req.body;     // Get the creation ID from the request body
 
         // Query the database for the creation with the given ID

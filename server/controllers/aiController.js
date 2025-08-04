@@ -24,7 +24,7 @@ const AI = new OpenAI({
 // 6. Send the article back to the client
 export const generateArticle = async (req, res) => {
     try {
-        const { userId } = req.auth; // Get the user's ID from authentication
+        const { userId } = req.auth(); // Get the user's ID from authentication
         const { prompt, length } = req.body; // Get the prompt and length from the request
         const plan = req.plan; // User's plan (free or premium)
         const freeUsage = req.free_usage; // How many free uses the user has left
@@ -87,7 +87,7 @@ export const generateArticle = async (req, res) => {
 // Steps are similar to generateArticle, but for blog titles.
 export const generateBlogTitle = async (req, res) => {
     try {
-        const { userId } = req.auth;
+        const { userId } = req.auth();
         const { prompt } = req.body;
         const plan = req.plan;
         const freeUsage = req.free_usage;
@@ -157,7 +157,7 @@ export const generateBlogTitle = async (req, res) => {
 // 6. Return the image URL to the client
 export const generateImage = async (req, res) => {
     try {
-        const { userId } = req.auth;
+        const { userId } = req.auth();
         const { prompt, publish } = req.body;
         const plan = req.plan;
 
@@ -210,7 +210,7 @@ export const generateImage = async (req, res) => {
 // Only premium users can use this feature.
 export const removeImageBackground = async (req, res) => {
     try {
-        const { userId } = req.auth; // Get the user's ID from authentication
+        const { userId } = req.auth(); // Get the user's ID from authentication
         const {image} = req.file;    // Get the uploaded image file
         const plan = req.plan;       // Get the user's plan (free or premium)
 
@@ -262,7 +262,7 @@ export const removeImageBackground = async (req, res) => {
 // Only premium users can use this feature.
 export const removeImageObject = async (req, res) => {
     try {
-        const { userId } = req.auth; // Get the user's ID from authentication
+        const { userId } = req.auth(); // Get the user's ID from authentication
         const { object } = req.body; // Get the object to remove from the request body
         const {image} = req.file;    // Get the uploaded image file
         const plan = req.plan;       // Get the user's plan (free or premium)
@@ -322,7 +322,7 @@ export const removeImageObject = async (req, res) => {
 // Only premium users can use this feature.
 export const resumeReview = async (req, res) => {
     try {
-        const { userId } = req.auth; // Get the user's ID from authentication
+        const { userId } = req.auth(); // Get the user's ID from authentication
         const {resume} = req.file;   // Get the uploaded resume file
         const plan = req.plan;       // Get the user's plan (free or premium)
 

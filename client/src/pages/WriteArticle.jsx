@@ -1,5 +1,11 @@
 import { Edit, Sparkles } from "lucide-react";
 import React, { useState } from "react";
+import  axios from "axios";
+import { useAuth } from "@clerk/clerk-react";
+import toast from "react-hot-toast";
+import Markdown from "react-markdown";
+
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 
 const WriteArticle = () => {
   /*
@@ -28,15 +34,45 @@ const WriteArticle = () => {
   const [selectedLength, setSelectedLength] = useState(articleLength[0]);
   // State to store the user's article topic/prompt text
   const [input, setInput] = useState("");
-  
+ 
+  // State to manage loading state (shows spinner when generating article)
+  const [loading, setLoading] = useState(false);
+
+  // State to store the generated article content from the AI
+  const [content, setContent] = useState("");
+
+  // Clerk hook to get authentication token for API requests
+  const { getToken } = useAuth();
+
   // Form submission handler - processes article generation with topic and length parameters
   const onSubmitHandler = async (e) => {
     e.preventDefault();
-    // In production: would send topic and length to AI article generation service
-    // Example: const response = await fetch('/api/generate-article', { 
-    //   method: 'POST', 
-    //   body: JSON.stringify({topic: input, wordCount: selectedLength.length}) 
-    // })
+    try {
+      setLoading(true) // Show loading spinner
+      // Create a detailed prompt for the AI with topic and length requirements
+      const prompt = `write an article on the topic: ${input} with a length of ${selectedLength.length} words.`;
+
+      // Make API call to backend to generate article using AI
+      const {data} = await axios.post(
+        '/api/ai/generate-article',
+        { prompt, length: selectedLength.length },
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`, // Include auth token for protected route
+          },
+        }
+      );
+
+      // Handle API response
+      if (data.success) {
+        setContent(data.content); // Store the generated article content
+      }else{
+        toast.error(data.message); // Show error message if generation failed
+      }
+    } catch (error) {
+      toast.error(error.message); // Show error message if API call failed
+    }
+    setLoading(false); // Hide loading spinner
   };
 
   return (
@@ -83,15 +119,18 @@ const WriteArticle = () => {
         </div>
         <br />
         
-        {/* Submit button with gradient background and edit icon */}
-        <button className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#226BFF] to-[#65ADFF] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer">
-          <Edit className="w-5" />
+        /* Submit button with gradient background and loading state */
+        <button disabled = {loading} className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#226BFF] to-[#65ADFF] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer">
+          {
+            loading ? <span className="w-4 h-4 my-1 rounded-full border-2 border-t-transparent animate-spin"></span> // Loading spinner
+            : <Edit className="w-5" /> // Edit icon when not loading
+          }
           Generate Article
         </button>
       </form>
 
       {/* Right column: Generated article display area with height constraints for long content */}
-      <div className="w-full max-w-lg p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-96 max-h-[600px]">
+      <div className="w-full max-w-lg p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-96 max-h-[650px]">
         {/* Results section header */}
         <div className="flex items-center gap-3">
           <Edit className="w-5 h-5 text-[#4A7AFF]" />
@@ -117,6 +156,8 @@ const WriteArticle = () => {
           - Error message if generation fails or topic is inappropriate
           - Empty state (current) when no article has been generated
         */}
+
+        {!content ? (
         <div className="flex-1 flex justify-center items-center">
           {/* Empty state: shows placeholder when no article has been generated yet */}
           <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
@@ -124,6 +165,15 @@ const WriteArticle = () => {
             <p>Enter a topic and click "Generate Article" to get started</p>
           </div>
         </div>
+
+        ) : (
+          /* Generated article display with markdown formatting and scrollable content */
+          <div className="mt-3 h-full overflow-y-scroll text-sm text-slate-600">
+            <div className="reset-tw">
+              <Markdown>{content}</Markdown> {/* Renders markdown content with proper formatting */}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
