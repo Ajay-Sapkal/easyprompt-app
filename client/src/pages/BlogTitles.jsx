@@ -1,6 +1,12 @@
 import { Hash, Sparkles } from "lucide-react";
 import React from "react";
 import { useState } from "react";
+import toast from "react-hot-toast";
+import axios from "axios";
+import Markdown from "react-markdown";
+import { useAuth } from "@clerk/clerk-react";
+
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 
 const BlogTitles = () => {
   /*
@@ -17,7 +23,7 @@ const BlogTitles = () => {
   // Static array of blog categories - these are the topic options users can choose from
   const blogCategories = [
     "General",
-    "Technology", 
+    "Technology",
     "Business",
     "Health",
     "Lifestyle",
@@ -30,12 +36,43 @@ const BlogTitles = () => {
   const [selectedCategory, setSelectedCategory] = useState("General");
   // State for user's keyword input
   const [input, setInput] = useState("");
-  
-  // Form submission handler - prevents default form submission and would call AI API
+
+  // State to manage loading state (shows spinner when generating blog titles)
+  const [loading, setLoading] = useState(false);
+  // State to store the generated blog titles content from the AI
+  const [content, setContent] = useState("");
+
+  // Clerk hook to get authentication token for API requests
+  const { getToken } = useAuth();
+
+  // Form submission handler - processes blog title generation with keyword and category
   const onSubmitHandler = async (e) => {
     e.preventDefault();
-    // In production, this would make an API call like:
-    // const response = await fetch('/api/generate-blog-titles', { method: 'POST', body: { input, selectedCategory } })
+    try {
+      setLoading(true); // Show loading spinner
+      // Create a detailed prompt for the AI with keyword and category context
+      const prompt = `Generate a blog title for the keyword ${input} in the category ${selectedCategory}`;
+      // Make API call to backend to generate blog titles using AI
+      const { data } = await axios.post(
+        "/api/ai/generate-blog-title",
+        { prompt },
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`, // Include auth token for protected route
+          },
+        }
+      );
+
+      // Handle API response
+      if (data.success) {
+        setContent(data.content); // Store the generated blog titles
+      } else {
+        toast.error(data.message); // Show error message if generation failed
+      }
+    } catch (error) {
+      toast.error(error.message); // Show error message if API call failed
+    }
+    setLoading(false); // Hide loading spinner
   };
 
   return (
@@ -50,7 +87,7 @@ const BlogTitles = () => {
           <Sparkles className="w-6 text-[#8E37EB]" />
           <h1 className="text-xl font-semibold">AI Title Generator</h1>
         </div>
-        
+
         {/* Keyword input field */}
         <p className="mt-6 text-sm font-medium">Keyword</p>
         <input
@@ -64,7 +101,7 @@ const BlogTitles = () => {
 
         {/* Category selection section */}
         <p className="mt-4 text-sm font-medium">Category</p>
-        
+
         {/* Category tags: dynamically rendered from blogCategories array */}
         <div className="mt-3 flex gap-3 flex-wrap sm:max-w-9/11">
           {blogCategories.map((item) => (
@@ -83,8 +120,15 @@ const BlogTitles = () => {
         </div>
         <br />
         {/* Submit button: triggers form submission and would generate blog titles */}
-        <button className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#C341F6] to-[#8E37EB] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer">
-          <Hash className="w-5" />
+        <button
+          disabled={loading}
+          className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#C341F6] to-[#8E37EB] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer"
+        >
+          {loading ? (
+            <span className="w-4 h-4 my-1 rounded-full border-2 border-t-transparent animate-spin"></span>
+          ) : (
+            <Hash className="w-5" />
+          )}
           Generate Title
         </button>
       </form>
@@ -98,13 +142,22 @@ const BlogTitles = () => {
         </div>
 
         {/* Results content area: currently shows placeholder, would display AI-generated titles */}
-        <div className="flex-1 flex justify-center items-center">
-          {/* Placeholder content: appears when no titles have been generated yet */}
-          <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
-            <Hash className="w-9 h-9 " />
-            <p>Enter a topic and click "Generate Title" to get started</p>
+        {!content ? (
+          <div className="flex-1 flex justify-center items-center">
+            {/* Placeholder content: appears when no titles have been generated yet */}
+            <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
+              <Hash className="w-9 h-9 " />
+              <p>Enter a topic and click "Generate Title" to get started</p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mt-3 h-full overflow-y-scroll text-sm text-slate-600">
+            <div className="reset-tw">
+              <Markdown>{content}</Markdown>{" "}
+              {/* Renders markdown content with proper formatting */}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

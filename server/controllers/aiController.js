@@ -47,7 +47,7 @@ export const generateArticle = async (req, res) => {
                 },
             ],
             temperature: 0.7,
-            max_tokens: length,
+            max_tokens: length * 2, // Allow more tokens than word count to ensure completion
         });
 
         const content = response.choices[0].message.content; // Get the article text from the AI response

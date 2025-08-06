@@ -1,6 +1,12 @@
 import { Image, Sparkles } from 'lucide-react';
 import React from 'react';
 import { useState } from 'react'
+import axios from "axios";
+import { useAuth } from '@clerk/clerk-react';
+import toast from 'react-hot-toast';
+
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
+
 
 const GenerateImages = () => {
   /*
@@ -36,11 +42,44 @@ const GenerateImages = () => {
   // State to track whether user wants to publish the generated image publicly
   const [publish, setPublish] = useState(false);
 
-  // Form submission handler - prevents default form behavior and handles image generation
+  // State to manage loading state (shows spinner when generating images)
+  const [loading, setLoading] = useState(false);
+  // State to store the generated image URL from the AI
+  const [content, setContent] = useState("");
+
+  // Clerk hook to get authentication token for API requests
+  const { getToken } = useAuth();
+
+  // Form submission handler - processes image generation with description, style, and publish options
   const onSubmitHandler = async (e) => {
     e.preventDefault();
-    // In production: would send API request with input, selectedStyle, and publish values
-    // Example: const response = await fetch('/api/generate-image', { method: 'POST', body: JSON.stringify({prompt: input, style: selectedStyle, publish}) })
+    try {
+      setLoading(true); // Show loading spinner
+
+      // Create a detailed prompt for the AI with description and style context
+      const prompt = `Generate an image of ${input} in the style ${selectedStyle}.`;
+
+      // Make API call to backend to generate image using AI (ClipDrop API)
+      const { data } = await axios.post(
+        "/api/ai/generate-image",
+        { prompt, publish }, // Send prompt and publish flag
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`, // Include auth token for protected route
+          },
+        }
+      );
+
+      // Handle API response
+      if (data.success) {
+        setContent(data.content); // Store the generated image URL
+      } else {
+        toast.error(data.message); // Show error message if generation failed
+      }
+    } catch (error) {
+      toast.error(error.message); // Show error message if API call failed
+    }
+    setLoading(false); // Hide loading spinner after processing
   };
   return (
     <div className="h-full overflow-y-scroll p-6 flex items-start flex-wrap gap-4 text-slate-700">
@@ -105,9 +144,13 @@ const GenerateImages = () => {
           <p className='text-sm'>Make this image public</p>
         </div>
 
-        {/* Submit button with gradient background and icon */}
-        <button className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#00AD25] to-[#04FF50] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer">
-          <Image className="w-5" />
+        {/*  Submit button with loading state and conditional icon display  */}
+        <button disabled={loading} className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#00AD25] to-[#04FF50] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer">
+          {
+            loading ? <span className='w-4 h-4 my-1 rounded-full border-2 border-t-transparent animate-spin'></span> 
+            : <Image className="w-5" />
+          }
+          
           Generate Image
         </button>
       </form>
@@ -128,13 +171,25 @@ const GenerateImages = () => {
           - Error message if generation fails
           - Empty state (current) when no generation has been attempted
         */}
-        <div className="flex-1 flex justify-center items-center">
+
+        {/* Conditional rendering: shows placeholder or generated image  */}
+        {
+          !content ? (
+            <div className="flex-1 flex justify-center items-center">
           {/* Empty state: shows placeholder when no images have been generated yet */}
           <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
             <Image className="w-9 h-9 " />
             <p>Enter a topic and click "Generate Image" to get started</p>
           </div>
         </div>
+          ) : (
+            /* Generated image display with full width and height */
+            <div className='mt-3 h-full'>
+              <img src={content} alt="img" className='w-full h-full'/>
+            </div>
+          )
+        }
+        
       </div>
     </div>
   )
