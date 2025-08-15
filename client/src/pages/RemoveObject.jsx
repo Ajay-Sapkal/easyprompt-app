@@ -1,6 +1,12 @@
 import { Scissors, Sparkles } from 'lucide-react';
 import React from 'react';
 import { useState } from 'react'
+import axios from 'axios';
+import { useAuth } from "@clerk/clerk-react";
+import toast from 'react-hot-toast';
+
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
+
 
 const RemoveObject = () => {
   /*
@@ -22,12 +28,51 @@ const RemoveObject = () => {
   // State to store the description of the object to be removed from the image
   const [object, setObject] = useState("");
 
+   // State to manage loading state (shows spinner when generating images)
+  const [loading, setLoading] = useState(false);
+  // State to store the generated image URL from the AI
+  const [content, setContent] = useState("");
+
+  // Clerk hook to get authentication token for API requests
+  const { getToken } = useAuth();
+
   // Form submission handler - processes the image to remove the specified object
   const onSubmitHandler = async (e) => {
     e.preventDefault();
-    // In production: would send both image file and object description to AI service
-    // Example: const formData = new FormData(); formData.append('image', input); formData.append('object', object);
-    // const response = await fetch('/api/remove-object', { method: 'POST', body: formData })
+    try {
+       setLoading(true); // Show loading spinner
+
+       if(object.split(' ').length > 1){
+        setLoading(false);
+        return toast.error("Please enter only one object name to remove");
+       }
+
+      // Create FormData object and append uploaded image file
+      const formData = new FormData()
+      formData.append('image', input) 
+      formData.append('object', object) 
+
+      // Make API call to backend to remove image object using AI
+      const { data } = await axios.post(
+        "/api/ai/remove-image-object",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`, // Include auth token for protected route
+          },
+        }
+      );
+
+      // Handle API response
+      if (data.success) {
+        setContent(data.content); // Store the processed image URL/content
+      } else {
+        toast.error(data.message); // Show error message if processing failed
+      }
+    } catch (error) {
+      toast.error(error.message); // Show error message if API call failed
+    }
+    setLoading(false); // Hide loading spinner after processing
   };
   return (
     <div className="h-full overflow-y-scroll p-6 flex items-start flex-wrap gap-4 text-slate-700">
@@ -64,14 +109,16 @@ const RemoveObject = () => {
         />
 
         {/* Submit button with gradient background and scissors icon */}
-        <button className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#417DF6] to-[#8E37EB] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer">
-          <Scissors className="w-5" />
+        <button disabled={loading} className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#417DF6] to-[#8E37EB] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer">
+          {
+            loading ? <span className='w-4 h-4 my-1 rounded-full border-2 border-t-transparent animate-spin'></span> : <Scissors className="w-5" />
+          }
           Remove Object
         </button>
       </form>
 
       {/* Right column: Results display area for processed image */}
-      <div className="w-full max-w-lg p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-96 ">
+      <div className="w-full max-w-lg p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-96 max-h-[600px]">
         {/* Results section header */}
         <div className="flex items-center gap-3">
           <Scissors className="w-5 h-5 text-[#4A7AFF]" />
@@ -91,13 +138,23 @@ const RemoveObject = () => {
           2. Precise segmentation to isolate the object
           3. Intelligent inpainting to fill the removed area naturally
         */}
-        <div className="flex-1 flex justify-center items-center">
-          {/* Empty state: shows placeholder when no object removal has been processed yet */}
-          <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
-            <Scissors className="w-9 h-9 " />
-            <p>Upload an image and click "Remove Object" to get started</p>
-          </div>
-        </div>
+
+        {
+          !content ?
+          (
+            <div className="flex-1 flex justify-center items-center">
+              {/* Empty state: shows placeholder when no object removal has been processed yet */}
+              <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
+                <Scissors className="w-9 h-9 " />
+                <p>Upload an image and click "Remove Object" to get started</p>
+              </div>
+            </div>
+          ) 
+          :
+          (
+            <img src={content} alt="img" className='mt-3 w-full h-full'/>
+          )
+        }
       </div>
     </div>
   )

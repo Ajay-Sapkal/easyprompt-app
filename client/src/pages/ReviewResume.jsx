@@ -1,5 +1,11 @@
 import { FileText, Sparkles } from 'lucide-react';
 import React, { useState } from 'react'
+import axios from 'axios';
+import { useAuth } from "@clerk/clerk-react";
+import toast from 'react-hot-toast';
+import Markdown from 'react-markdown';
+
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 
 const ReviewResume = () => {
   /*
@@ -17,14 +23,47 @@ const ReviewResume = () => {
 
   // State to store the uploaded PDF resume file (File object from file input)
   const [input, setInput] = useState("");
+
+   // State to manage loading state (shows spinner when analyzing resume)
+  const [loading, setLoading] = useState(false);
+  // State to store the AI-generated resume analysis and feedback
+  const [content, setContent] = useState("");
+
+  // Clerk hook to get authentication token for API requests
+  const { getToken } = useAuth();
   
   // Form submission handler - processes the uploaded PDF resume for AI analysis
   const onSubmitHandler = async (e) => {
     e.preventDefault();
-    // In production: would send PDF file to resume analysis API
-    // Example: const formData = new FormData(); formData.append('resume', input);
-    // const response = await fetch('/api/review-resume', { method: 'POST', body: formData })
-    // API would extract text, analyze structure, check for keywords, formatting, etc.
+    try {
+      setLoading(true); // Show loading spinner
+
+      // Create FormData object and append uploaded resume file
+      const formData = new FormData()
+      formData.append('resume', input) 
+       
+      // Make API call to backend to analyze resume using AI
+      const { data } = await axios.post(
+        "/api/ai/resume-review",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`, // Include auth token for protected route
+          },
+        }
+      );
+
+      // Handle API response
+      if (data.success) {
+        setContent(data.content); // Store the AI-generated resume analysis
+      } else {
+        toast.error(data.message); // Show error message if analysis failed
+      }
+    } catch (error) {
+      toast.error(error.message); // Show error message if API call failed
+
+    }
+    setLoading(false); // Hide loading spinner after processing
   };
   
   return (
@@ -54,14 +93,19 @@ const ReviewResume = () => {
         <p className="text-xs text-gray-500 font-light mt-1">Supports PDF resumes only</p>
 
         {/* Submit button with gradient background and document icon */}
-        <button className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#00DA83] to-[#009BB3] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer">
-          <FileText className="w-5" />
+        <button disabled={loading} className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#00DA83] to-[#009BB3] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer">
+          {
+            loading ? <span className='w-4 h-4 my-1 rounded-full border-2 border-t-transparent animate-spin'></span> 
+            :
+            <FileText className="w-5" />
+
+          }
           Review Resume
         </button>
       </form>
 
       {/* Right column: Analysis results display area with height constraints */}
-      <div className="w-full max-w-lg p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-96 max-h-[600px]">
+      <div className="w-full max-w-2xl p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-[700px] max-h-[700px]">
         {/* Results section header */}
         <div className="flex items-center gap-3">
           <FileText className="w-5 h-5 text-[#00DA83]" />
@@ -85,13 +129,27 @@ const ReviewResume = () => {
           - Error message if PDF can't be processed or is corrupted
           - Empty state (current) when no analysis has been performed
         */}
-        <div className="flex-1 flex justify-center items-center">
+        {
+          !content ? 
+          (
+            <div className="flex-1 flex justify-center items-center">
           {/* Empty state: shows placeholder when no resume analysis has been performed yet */}
           <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
             <FileText className="w-9 h-9 " />
             <p>Upload a resume and click "Review Resume" to get started</p>
           </div>
         </div>
+          ) 
+          :
+          (
+            <div className='mt-3 h-full overflow-y-scroll text-sm text-slate-600'>
+              <div className='reset-tw'>
+                <Markdown>{content}</Markdown>
+              </div>
+            </div>
+          )
+        }
+        
       </div>
     </div>
   )

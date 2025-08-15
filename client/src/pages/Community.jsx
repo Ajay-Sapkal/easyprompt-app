@@ -1,32 +1,155 @@
 import { useUser } from '@clerk/clerk-react';
 import React, { useState, useEffect } from 'react'
 import { dummyPublishedCreationData } from '../assets/assets';
-import { Heart, Users } from 'lucide-react';
+import { Heart, Users } from 'lucide-react';import axios from 'axios';
+import { useAuth } from "@clerk/clerk-react";
+import toast from 'react-hot-toast';
+
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
+
 
 const Community = () => {
   /*
     Community component displays a gallery of published AI-generated creations from all users.
+    FEATURES IMPLEMENTED:
+    - Real-time backend integration with API authentication
+    - Optimistic UI updates for instant like feedback
+    - Instagram-like heart animations with custom CSS keyframes
+    - Hover effects for image overlays and prompt display
+    - Error handling with toast notifications
+    
     LOGIC EXPLANATION:
-    - Uses useState to manage creations array (list of published community content)
-    - useUser hook gets current user info for like functionality
-    - fetchCreations function loads published creations (currently dummy data, would be API call)
-    - useEffect runs fetchCreations when user is available (prevents loading before authentication)
-    - Maps through creations to render each as an image card with hover effects
-    - Each card shows the creation image, prompt on hover, and like count with interactive heart
-    - Heart icon changes color/fill based on whether current user has liked the creation
-    - Uses CSS group hover classes for overlay effects on image hover
+    - Uses useState to manage creations array and animation states
+    - useUser and useAuth hooks for Clerk authentication and API tokens
+    - fetchCreations function loads published creations via authenticated API call
+    - imageLikeToggle implements optimistic updates with fallback error handling
+    - Custom CSS animations for heart pop effects and floating like animations
+    - Group hover classes create smooth overlay transitions on image cards
+    - Loading spinner displayed during initial data fetch
   */
 
-  // State to store array of published community creations
+  // State to store array of published community creations (loaded from backend API)
   const [creations, setCreations] = useState([]);
-  // Get current user info from Clerk for like functionality
+  // Get current user info from Clerk for authentication and like functionality
   const {user} = useUser();
-  
-  // Function to fetch published creations from community (would be API call in production)
+  // Loading state for initial data fetch from server
+  const [loading, setLoading] = useState(true);
+  // State to track which creation is showing Instagram-like heart animation
+  const [animatingLike, setAnimatingLike] = useState(null);
+  // Clerk authentication hook to get JWT tokens for API requests
+  const { getToken } = useAuth();
+
+  // Function to fetch published creations from backend API with authentication
   const fetchCreations = async () => {
-    // In production: const response = await fetch('/api/community/creations')
-    setCreations(dummyPublishedCreationData);
+    try {
+      // Make authenticated API call to get all published community creations
+      const {data} = await axios.get('/api/user/get-published-creations', {
+        headers: {
+          Authorization: `Bearer ${await getToken()}` // Include JWT token for authentication
+        }
+      });
+      if (data.success) {
+        setCreations(data.creations); // Update state with fetched creations
+      } else {
+        toast.error(data.message); // Show error if API returns failure
+      }
+    } catch (error) {
+      toast.error(error.message); // Handle network or other errors
+    }
+    setLoading(false); // Hide loading spinner after fetch completes
   };
+
+  /*
+    OPTIMISTIC LIKE TOGGLE FUNCTION
+    Implements Instagram-like instant like feedback with backend synchronization
+    
+    FEATURES:
+    - Optimistic UI updates: Heart fills immediately on click for instant feedback
+    - Instagram-style animations: Heart pop effect only triggers when liking (not unliking)
+    - Error handling: Reverts optimistic changes if API call fails
+    - Background sync: API call happens after UI update for perceived speed
+    
+    FLOW:
+    1. Check current like status to determine if this is a like or unlike action
+    2. If liking: trigger Instagram-style heart pop animation for 1 second
+    3. Immediately update UI state (optimistic update) before API call
+    4. Make authenticated API call to backend in background
+    5. If API fails: revert the optimistic update and show error message
+  */
+  const imageLikeToggle = async (id) =>{
+    try {
+      // Check if this is a like (not unlike) to show animation
+      const currentCreation = creations.find(creation => creation.id === id);
+      const isCurrentlyLiked = currentCreation?.likes.includes(user.id);
+      
+      // Show Instagram-style animation only when liking (not unliking)
+      if (!isCurrentlyLiked) {
+        setAnimatingLike(id); // Trigger heart pop animation
+        // Remove animation state after 1 second to complete the effect
+        setTimeout(() => setAnimatingLike(null), 1000);
+      }
+
+      // OPTIMISTIC UPDATE: immediately update UI before API call for instant feedback
+      setCreations(prevCreations => 
+        prevCreations.map(creation => {
+          if (creation.id === id) {
+            return {
+              ...creation,
+              likes: isCurrentlyLiked 
+                ? creation.likes.filter(userId => userId !== user.id) // Remove user's like
+                : [...creation.likes, user.id] // Add user's like
+            };
+          }
+          return creation;
+        })
+      );
+
+      // Make authenticated API call in background after UI update
+      const {data} = await axios.post('/api/user/toggle-like-creations',
+        {id}, 
+        {
+        headers: {
+          Authorization: `Bearer ${await getToken()}` // Include JWT for authentication
+        }
+      });
+      
+      if (!data.success) {
+        // REVERT OPTIMISTIC UPDATE: If API call fails, undo the UI changes
+        setCreations(prevCreations => 
+          prevCreations.map(creation => {
+            if (creation.id === id) {
+              const wasLiked = creation.likes.includes(user.id);
+              return {
+                ...creation,
+                likes: wasLiked 
+                  ? creation.likes.filter(userId => userId !== user.id) // Revert: remove like
+                  : [...creation.likes, user.id] // Revert: add like back
+              };
+            }
+            return creation;
+          })
+        );
+        toast.error(data.message);
+      }
+    } catch (error) {
+      // HANDLE NETWORK ERRORS: Revert optimistic update if API call fails
+      setCreations(prevCreations => 
+        prevCreations.map(creation => {
+          if (creation.id === id) {
+            const wasLiked = creation.likes.includes(user.id);
+            return {
+              ...creation,
+              likes: wasLiked 
+                ? creation.likes.filter(userId => userId !== user.id) // Revert: remove like
+                : [...creation.likes, user.id] // Revert: add like back
+            };
+          }
+          return creation;
+        })
+      );
+      toast.error(error.message);
+    }
+  }
 
   // useEffect runs fetchCreations when user becomes available (after authentication)
   useEffect(() => {
@@ -35,8 +158,31 @@ const Community = () => {
     }
   }, [user]); // Dependency on user ensures it runs when user logs in
 
-  return (
-    <div className='flex-1 h-full flex flex-col gap-4 p-6'>
+  return !loading ? (
+    <>
+      {/* 
+        CUSTOM CSS ANIMATIONS FOR INSTAGRAM-LIKE INTERACTIONS
+        
+        heartPop: Button heart animation for the like button itself
+        - Quick pop effect that scales from 1 → 1.5 → 1 
+        - Fast 0.2s timing for snappy Instagram-like feedback
+        - Triggers only when liking (not unliking) for authentic feel
+      */}
+      <style jsx>{`
+        @keyframes heartPop {
+          0% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.5);
+          }
+          100% {
+            transform: scale(1);
+          }
+        }
+      `}</style>
+      
+      <div className='flex-1 h-full flex flex-col gap-4 p-6'>
       {/* Page header with icon and title */}
       <div className='flex items-center gap-3'>
         <Users className='w-6 h-6 text-[#4A7AFF]' />
@@ -65,19 +211,40 @@ const Community = () => {
                 {/* Like count: shows number of users who liked this creation */}
                 <p>{creation.likes.length}</p>
                 {/* 
-                  Heart icon: interactive like button
+                  Heart icon: interactive like button with bounce animation
                   - Checks if current user's ID is in the likes array
                   - If liked: filled red heart, if not liked: white outline heart
                   - Hover effect scales the icon slightly
                 */}
-                <Heart className={`min-w-5 h-5 hover:scale-110 cursor-pointer ${creation.likes.includes(user.id) ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+                <Heart 
+                  onClick={() => imageLikeToggle(creation.id)} 
+                  className={`min-w-5 h-5 cursor-pointer transition-all duration-300 ${
+                    creation.likes.includes(user.id) 
+                      ? 'fill-red-500 text-red-500' 
+                      : 'text-white hover:text-red-300 hover:scale-110'
+                  } ${
+                    animatingLike === creation.id ? 'animate-bounce scale-125' : ''
+                  }`} 
+                  style={{
+                    transformOrigin: 'center',
+                    ...(animatingLike === creation.id && {
+                      animation: 'heartPop 0.5s ease-out'
+                    })
+                  }}
+                />
               </div>
             </div>
           </div>
         ))}
       </div>
     </div>
-
+    </>
+  )
+  :
+  (
+    <div className='flex justify-center items-center h-full'>
+      <span className='w-10 h-10 rounded-full border-3 border-primary border-t-transparent animate-spin'></span>
+    </div>
   )
 }
 

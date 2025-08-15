@@ -211,7 +211,7 @@ export const generateImage = async (req, res) => {
 export const removeImageBackground = async (req, res) => {
     try {
         const { userId } = req.auth(); // Get the user's ID from authentication
-        const {image} = req.file;    // Get the uploaded image file
+        const image = req.file;    // Get the uploaded image file
         const plan = req.plan;       // Get the user's plan (free or premium)
 
         // Only premium users can generate images
@@ -264,15 +264,14 @@ export const removeImageObject = async (req, res) => {
     try {
         const { userId } = req.auth(); // Get the user's ID from authentication
         const { object } = req.body; // Get the object to remove from the request body
-        const {image} = req.file;    // Get the uploaded image file
+        const image = req.file;    // Get the uploaded image file
         const plan = req.plan;       // Get the user's plan (free or premium)
 
-        // Only premium users can generate images
-        // Only premium users can generate images
+        // Only premium users can use this feature
         if (plan !== 'premium') {
             return res.json({
                 success: false,
-                message: "Free users cannot generate images. Upgrade to premium for this feature."
+                message: "Free users cannot use this feature. Upgrade to premium for object removal."
             });
         }
 
@@ -282,11 +281,11 @@ export const removeImageObject = async (req, res) => {
         // Upload the image to Cloudinary and get its public ID
         const {public_id} = await cloudinary.uploader.upload(image.path)
 
-        // Generate a new image URL with the specified object removed using Cloudinary's transformation
+        // Generate a new image URL with the specified object removed using Cloudinary's AI-powered generative removal
         const imageURL = cloudinary.url(public_id, {
             transformation: [
                 {
-                    effect: `gen_remove: ${object}`, // Remove the specified object
+                    effect: `gen_remove:prompt_${object}`, // Correct syntax for generative removal with prompt
                 }
             ],
             resource_type: 'image',
@@ -323,7 +322,7 @@ export const removeImageObject = async (req, res) => {
 export const resumeReview = async (req, res) => {
     try {
         const { userId } = req.auth(); // Get the user's ID from authentication
-        const {resume} = req.file;   // Get the uploaded resume file
+        const resume = req.file;   // Get the uploaded resume file
         const plan = req.plan;       // Get the user's plan (free or premium)
 
         // Only premium users can generate images
@@ -348,10 +347,10 @@ export const resumeReview = async (req, res) => {
         // Parse the PDF to extract text content
         const pdfData = await pdf(dataBuffer);
 
-        // Create a prompt for the AI to review the resume
-        const prompt = `Review the following resume and provide constructive feedback on its strengths, weaknesses, and areas for improvement. Resume content:\n\n${pdfData.text}`;
+        // Create a comprehensive prompt for the AI to review the resume with word count guidance
+        const prompt = `Please provide a detailed review of the following resume in approximately 800 words. Include specific feedback on strengths, weaknesses, and actionable improvements. Resume content:\n\n${pdfData.text}`;
 
-        // Ask the AI to generate feedback for the resume
+        // Ask the AI to generate comprehensive feedback for the resume
         const response = await AI.chat.completions.create({
             model: "gemini-2.0-flash",
             messages: [
@@ -361,7 +360,7 @@ export const resumeReview = async (req, res) => {
                 },
             ],
             temperature: 0.7,
-            max_tokens: 1000,
+            max_tokens: 1600, // 800 words * 2 = adequate tokens for complete response
         });
 
         const content = response.choices[0].message.content; // Get the feedback text from the AI response

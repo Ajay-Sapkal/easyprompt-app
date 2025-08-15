@@ -1,7 +1,12 @@
 import { Eraser, Sparkles } from "lucide-react";
 import React from "react";
 import { useState } from "react";
+import axios from 'axios';
+import { useAuth } from "@clerk/clerk-react";
+import toast from 'react-hot-toast';
 
+
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 
 const RemoveBackground = () => {
   /*
@@ -19,12 +24,46 @@ const RemoveBackground = () => {
   // State to store the uploaded image file (File object from file input)
   const [input, setInput] = useState("");
 
+  // State to manage loading state (shows spinner when processing image)
+  const [loading, setLoading] = useState(false);
+  // State to store the processed image URL/content from the AI
+  const [content, setContent] = useState("");
+
+  // Clerk hook to get authentication token for API requests
+  const { getToken } = useAuth();
+
   // Form submission handler - processes the uploaded image for background removal
   const onSubmitHandler = async (e) => {
     e.preventDefault();
-    // In production: would send the image file to background removal API
-    // Example: const formData = new FormData(); formData.append('image', input);
-    // const response = await fetch('/api/remove-background', { method: 'POST', body: formData })
+    try {
+       setLoading(true); // Show loading spinner
+
+      // Create FormData object and append uploaded image file
+      const formData = new FormData()
+      formData.append('image', input) 
+       
+      // Make API call to backend to remove image background using AI
+      const { data } = await axios.post(
+        "/api/ai/remove-image-background",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`, // Include auth token for protected route
+          },
+        }
+      );
+
+      // Handle API response
+      if (data.success) {
+        setContent(data.content); // Store the processed image URL/content
+      } else {
+        toast.error(data.message); // Show error message if processing failed
+      }
+    } catch (error) {
+      
+      toast.error(error.message); // Show error message if API call failed
+    }
+    setLoading(false); // Hide loading spinner after processing
   };
 
   return (
@@ -54,8 +93,11 @@ const RemoveBackground = () => {
         <p className="text-xs text-gray-500 font-light mt-1">Supports: JPG, PNG, and other image formats</p>
 
         {/* Submit button with gradient background and eraser icon */}
-        <button className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#F6AB41] to-[#FF4938] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer">
-          <Eraser className="w-5" />
+        <button disabled={loading} className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#F6AB41] to-[#FF4938] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer">
+          {
+            loading ? <span className='w-4 h-4 my-1 rounded-full border-2 border-t-transparent animate-spin'></span>
+            : <Eraser className="w-5" />
+          }
           Remove Background
         </button>
       </form>
@@ -77,13 +119,20 @@ const RemoveBackground = () => {
           - Error message if processing fails
           - Empty state (current) when no processing has been attempted
         */}
-        <div className="flex-1 flex justify-center items-center">
-          {/* Empty state: shows placeholder when no image has been processed yet */}
-          <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
-            <Eraser className="w-9 h-9 " />
-            <p>Upload an image and click "Remove Background" to get started</p>
-          </div>
-        </div>
+
+        {
+          !content ? 
+          (
+            <div className="flex-1 flex justify-center items-center">
+              {/* Empty state: shows placeholder when no image has been processed yet */}
+              <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
+                <Eraser className="w-9 h-9 " />
+                <p>Upload an image and click "Remove Background" to get started</p>
+              </div>
+            </div>
+          ) :
+          <img src={content} alt="image" className="mt-3 w-full h-full"/>
+        }
       </div>
     </div>
   );

@@ -130,7 +130,7 @@ const WriteArticle = () => {
       </form>
 
       {/* Right column: Generated article display area with height constraints for long content */}
-      <div className="w-full max-w-lg p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-96 max-h-[650px]">
+      <div className="w-full max-w-2xl p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-[700px] max-h-[700px]">
         {/* Results section header */}
         <div className="flex items-center gap-3">
           <Edit className="w-5 h-5 text-[#4A7AFF]" />
