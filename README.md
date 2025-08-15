@@ -5,55 +5,55 @@ A comprehensive AI-powered SaaS application that provides multiple AI services i
 ## 📸 Screenshots
 
 ### 🏠 Home Page
-*[Add Home Page Screenshot Here]*
+![Home Page](./screenshots/Home.png)
 - Landing page with hero section
 - Feature highlights and pricing overview
 - Clean, modern design with gradient backgrounds
 
 ### 📊 Dashboard
-*[Add Dashboard Screenshot Here]*
+![Dashboard](./screenshots/dashboard.png)
 - User statistics and metrics
 - Recent creations with accordion-style expansion
 - Plan status indicator (Free/Premium)
 
 ### ✍️ AI Article Writer
-*[Add Article Writer Screenshot Here]*
+![AI Article Writer](./screenshots/article.png)
 - Topic input with length selection
 - Real-time generation with loading states
 - Markdown-formatted output with copy functionality
 
 ### 🏷️ Blog Title Generator
-*[Add Blog Title Generator Screenshot Here]*
+![Blog Title Generator](./screenshots/blog_title.png)
 - Category and keyword-based generation
 - Multiple title suggestions
 - Industry-specific optimization
 
 ### 🎨 AI Image Generator (Premium)
-*[Add Image Generator Screenshot Here]*
+![AI Image Generator](./screenshots/image_generation.png)
 - Text-to-image generation with style options
 - High-quality AI-generated artwork
 - Public/private publishing options
 
 ### 🖼️ Background Removal (Premium)
-*[Add Background Removal Screenshot Here]*
+![Background Removal](./screenshots/remove_background.png)
 - Professional background removal tool
 - Drag-and-drop file upload
 - Instant processing and download
 
 ### ✂️ Object Removal (Premium)
-*[Add Object Removal Screenshot Here]*
+![Object Removal](./screenshots/remove_object.png)
 - Smart object detection and removal
 - Natural background filling
 - Professional editing capabilities
 
 ### 📄 Resume Review (Premium)
-*[Add Resume Review Screenshot Here]*
+![Resume Review](./screenshots/resume_review.png)
 - AI-powered resume analysis
 - Detailed feedback and suggestions
 - Professional improvement recommendations
 
 ### 🌟 Community Gallery
-*[Add Community Gallery Screenshot Here]*
+![Community Gallery](./screenshots/community.png)
 - Published AI creations showcase
 - Like/unlike functionality with animations
 - Instagram-style interactions
