@@ -1,7 +1,7 @@
 import { useUser } from '@clerk/clerk-react';
 import React, { useState, useEffect } from 'react'
 import { dummyPublishedCreationData } from '../assets/assets';
-import { Heart, Users, Download } from 'lucide-react';import axios from 'axios';
+import { Heart, Users, Download, Copy } from 'lucide-react';import axios from 'axios';
 import { useAuth } from "@clerk/clerk-react";
 import toast from 'react-hot-toast';
 
@@ -36,8 +36,32 @@ const Community = () => {
   const [loading, setLoading] = useState(true);
   // State to track which creation is showing Instagram-like heart animation
   const [animatingLike, setAnimatingLike] = useState(null);
+  // State to track which prompt is expanded (showing full text)
+  const [expandedPrompt, setExpandedPrompt] = useState(null);
   // Clerk authentication hook to get JWT tokens for API requests
   const { getToken } = useAuth();
+
+  // Function to truncate long prompts and handle expansion
+  const truncateText = (text, maxLength = 50) => {
+    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+  };
+
+  // Toggle prompt expansion
+  const togglePromptExpansion = (creationId, e) => {
+    e.stopPropagation();
+    setExpandedPrompt(expandedPrompt === creationId ? null : creationId);
+  };
+
+  // Copy prompt functionality
+  const copyPrompt = async (prompt, e) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(prompt);
+      toast.success("Prompt copied to clipboard!");
+    } catch (err) {
+      toast.error("Failed to copy prompt");
+    }
+  };
 
   // Download functionality for community images
   const downloadImage = async (imageUrl, creationId) => {
@@ -238,12 +262,37 @@ const Community = () => {
               - Normally positioned at bottom-right showing only like count
               - On hover: spans full image with dark gradient, shows prompt text
             */}
-            <div className='absolute bottom-0 top-0 right-0 left-3 flex gap-2 items-end justify-end group-hover:justify-between p-3 group-hover:bg-gradient-to-b from-transparent to-black/80 text-white rounded-lg'>
-              {/* Prompt text: hidden by default, shows on hover */}
-              <p className='text-sm hidden group-hover:block'>{creation.prompt}</p>
+            <div className='absolute bottom-0 top-0 right-0 left-3 flex flex-col justify-end p-3 group-hover:bg-gradient-to-b from-transparent to-black/80 text-white rounded-lg'>
+              {/* Prompt text: hidden by default, shows on hover with expandable functionality */}
+              <div className='text-sm hidden group-hover:block mb-2'>
+                <div className='flex items-start justify-between gap-2'>
+                  <div className='cursor-pointer flex-1' onClick={(e) => togglePromptExpansion(creation.id, e)}>
+                    <p className='break-words'>
+                      {expandedPrompt === creation.id 
+                        ? creation.prompt 
+                        : truncateText(creation.prompt)
+                      }
+                      {creation.prompt.length > 50 && (
+                        <span className='ml-1 text-blue-300 hover:text-blue-100 font-medium'>
+                          {expandedPrompt === creation.id ? ' (click to collapse)' : ' (click to expand)'}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  
+                  {/* Copy prompt button */}
+                  <button
+                    onClick={(e) => copyPrompt(creation.prompt, e)}
+                    className='bg-white/20 hover:bg-white/30 p-1.5 rounded-md transition-colors duration-200 flex-shrink-0'
+                    title='Copy prompt'
+                  >
+                    <Copy className='w-3.5 h-3.5' />
+                  </button>
+                </div>
+              </div>
               
               {/* Like section: shows count and interactive heart icon */}
-              <div className='flex gap-1 items-center'>
+              <div className='flex gap-1 items-center justify-end'>
                 {/* Like count: shows number of users who liked this creation */}
                 <p>{creation.likes.length}</p>
                 {/* 

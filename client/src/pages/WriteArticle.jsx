@@ -1,4 +1,4 @@
-import { Edit, Sparkles } from "lucide-react";
+import { Edit, Sparkles, Copy } from "lucide-react";
 import React, { useState } from "react";
 import  axios from "axios";
 import { useAuth } from "@clerk/clerk-react";
@@ -43,6 +43,16 @@ const WriteArticle = () => {
 
   // Clerk hook to get authentication token for API requests
   const { getToken } = useAuth();
+
+  // Copy article to clipboard functionality
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast.success("Article copied to clipboard!");
+    } catch (err) {
+      toast.error("Failed to copy article");
+    }
+  };
 
   // Form submission handler - processes article generation with topic and length parameters
   const onSubmitHandler = async (e) => {
@@ -144,9 +154,22 @@ Format the article with proper markdown headings and structure for professional 
       {/* Right column: Generated article display area with height constraints for long content */}
       <div className="w-full max-w-2xl p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-[700px] max-h-[700px]">
         {/* Results section header */}
-        <div className="flex items-center gap-3">
-          <Edit className="w-5 h-5 text-[#4A7AFF]" />
-          <h1 className="text-xl font-semibold">Generated Article</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Edit className="w-5 h-5 text-[#4A7AFF]" />
+            <h1 className="text-xl font-semibold">Generated Article</h1>
+          </div>
+          
+          {/* Copy button - only show when content exists */}
+          {content && (
+            <button
+              onClick={copyToClipboard}
+              className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 text-xs rounded-md hover:bg-blue-100 transition-colors"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              Copy Article
+            </button>
+          )}
         </div>
 
         {/* 

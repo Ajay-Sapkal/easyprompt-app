@@ -1,4 +1,4 @@
-import { FileText, Sparkles } from 'lucide-react';
+import { FileText, Sparkles, Copy } from 'lucide-react';
 import React, { useState } from 'react'
 import axios from 'axios';
 import { useAuth } from "@clerk/clerk-react";
@@ -31,6 +31,17 @@ const ReviewResume = () => {
 
   // Clerk hook to get authentication token for API requests
   const { getToken } = useAuth();
+  
+  // Copy analysis results to clipboard
+  const copyToClipboard = () => {
+    if (content) {
+      navigator.clipboard.writeText(content).then(() => {
+        toast.success('Analysis copied to clipboard!');
+      }).catch(() => {
+        toast.error('Failed to copy analysis');
+      });
+    }
+  };
   
   // Form submission handler - processes the uploaded PDF resume for AI analysis
   const onSubmitHandler = async (e) => {
@@ -107,9 +118,20 @@ const ReviewResume = () => {
       {/* Right column: Analysis results display area with height constraints */}
       <div className="w-full max-w-2xl p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-[700px] max-h-[700px]">
         {/* Results section header */}
-        <div className="flex items-center gap-3">
-          <FileText className="w-5 h-5 text-[#00DA83]" />
-          <h1 className="text-xl font-semibold">Analysis Results</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <FileText className="w-5 h-5 text-[#00DA83]" />
+            <h1 className="text-xl font-semibold">Analysis Results</h1>
+          </div>
+          {content && (
+            <button
+              onClick={copyToClipboard}
+              className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-600 text-xs rounded-md hover:bg-green-100 transition-colors"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              Copy Analysis
+            </button>
+          )}
         </div>
 
         {/* 

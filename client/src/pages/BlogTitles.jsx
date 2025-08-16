@@ -1,4 +1,4 @@
-import { Hash, Sparkles } from "lucide-react";
+import { Hash, Sparkles, Copy } from "lucide-react";
 import React from "react";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -44,6 +44,16 @@ const BlogTitles = () => {
 
   // Clerk hook to get authentication token for API requests
   const { getToken } = useAuth();
+
+  // Copy blog titles to clipboard functionality
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast.success("Blog titles copied to clipboard!");
+    } catch (err) {
+      toast.error("Failed to copy blog titles");
+    }
+  };
 
   // Form submission handler - processes blog title generation with keyword and category
   const onSubmitHandler = async (e) => {
@@ -136,9 +146,22 @@ const BlogTitles = () => {
       {/* Right column: Results display area */}
       <div className="w-full max-w-lg p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-96 ">
         {/* Results header */}
-        <div className="flex items-center gap-3">
-          <Hash className="w-5 h-5 text-[#8E37EB]" />
-          <h1 className="text-xl font-semibold">Generated titles</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Hash className="w-5 h-5 text-[#8E37EB]" />
+            <h1 className="text-xl font-semibold">Generated titles</h1>
+          </div>
+          
+          {/* Copy button - only show when content exists */}
+          {content && (
+            <button
+              onClick={copyToClipboard}
+              className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-600 text-xs rounded-md hover:bg-purple-100 transition-colors"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              Copy Titles
+            </button>
+          )}
         </div>
 
         {/* Results content area: currently shows placeholder, would display AI-generated titles */}
