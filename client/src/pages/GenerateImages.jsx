@@ -1,4 +1,4 @@
-import { Image, Sparkles } from 'lucide-react';
+import { Image, Sparkles, Download } from 'lucide-react';
 import React from 'react';
 import { useState } from 'react'
 import axios from "axios";
@@ -47,10 +47,31 @@ const GenerateImages = () => {
   // State to store the generated image URL from the AI
   const [content, setContent] = useState("");
 
-  // Clerk hook to get authentication token for API requests
+    // Clerk hook to get authentication token for API requests
   const { getToken } = useAuth();
 
-  // Form submission handler - processes image generation with description, style, and publish options
+  // Download generated image function
+  const downloadImage = async () => {
+    if (content) {
+      try {
+        const response = await fetch(content);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'generated-image.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        toast.success('Image downloaded successfully!');
+      } catch (error) {
+        toast.error('Failed to download image');
+      }
+    }
+  };
+
+  // Form submission handler - generates AI image based on user inputs
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     try {
@@ -156,11 +177,22 @@ const GenerateImages = () => {
       </form>
 
       {/* Right column: Results display area for generated images */}
-      <div className="w-full max-w-lg p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-96 ">
+      <div className="w-full max-w-xl p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-[28rem] ">
         {/* Results section header */}
-        <div className="flex items-center gap-3">
-          <Image className="w-5 h-5 text-[#00AD25]" />
-          <h1 className="text-xl font-semibold">Generated images</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Image className="w-5 h-5 text-[#00AD25]" />
+            <h1 className="text-xl font-semibold">Generated images</h1>
+          </div>
+          {content && (
+            <button
+              onClick={downloadImage}
+              className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-600 text-xs rounded-md hover:bg-green-100 transition-colors cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Download
+            </button>
+          )}
         </div>
 
         {/* 

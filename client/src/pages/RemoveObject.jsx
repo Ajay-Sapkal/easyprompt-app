@@ -1,4 +1,4 @@
-import { Scissors, Sparkles } from 'lucide-react';
+import { Scissors, Sparkles, Download } from 'lucide-react';
 import React from 'react';
 import { useState } from 'react'
 import axios from 'axios';
@@ -35,6 +35,27 @@ const RemoveObject = () => {
 
   // Clerk hook to get authentication token for API requests
   const { getToken } = useAuth();
+
+  // Download processed image function
+  const downloadImage = async () => {
+    if (content) {
+      try {
+        const response = await fetch(content);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'object-removed-image.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        toast.success('Image downloaded successfully!');
+      } catch (error) {
+        toast.error('Failed to download image');
+      }
+    }
+  };
 
   // Form submission handler - processes the image to remove the specified object
   const onSubmitHandler = async (e) => {
@@ -118,11 +139,22 @@ const RemoveObject = () => {
       </form>
 
       {/* Right column: Results display area for processed image */}
-      <div className="w-full max-w-lg p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-96 max-h-[600px]">
+      <div className="w-full max-w-xl p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-[28rem] max-h-[700px]">
         {/* Results section header */}
-        <div className="flex items-center gap-3">
-          <Scissors className="w-5 h-5 text-[#4A7AFF]" />
-          <h1 className="text-xl font-semibold">Processed Image</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Scissors className="w-5 h-5 text-[#4A7AFF]" />
+            <h1 className="text-xl font-semibold">Processed Image</h1>
+          </div>
+          {content && (
+            <button
+              onClick={downloadImage}
+              className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 text-xs rounded-md hover:bg-blue-100 transition-colors cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Download
+            </button>
+          )}
         </div>
 
         {/* 
