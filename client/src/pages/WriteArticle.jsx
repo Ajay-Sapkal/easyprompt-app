@@ -49,13 +49,25 @@ const WriteArticle = () => {
     e.preventDefault();
     try {
       setLoading(true) // Show loading spinner
-      // Create a detailed prompt for the AI with topic and length requirements
-      const prompt = `write an article on the topic: ${input} with a length of ${selectedLength.length} words.`;
+      
+      // Create a clean user-friendly prompt for display in dashboard
+      const userPrompt = `Write a ${selectedLength.length}-word article on the topic: ${input}`;
+      
+      // Create a detailed prompt for the AI with technical instructions
+      const aiPrompt = `Write a ${selectedLength.length}-word article on the topic: ${input}. 
+
+IMPORTANT: Start directly with the article content. Do not include any introductory phrases like "Here's an article" or "I'll write an article about". Begin immediately with the article title or first paragraph.
+
+Format the article with proper markdown headings and structure for professional presentation.`;
 
       // Make API call to backend to generate article using AI
       const {data} = await axios.post(
         '/api/ai/generate-article',
-        { prompt, length: selectedLength.length },
+        { 
+          prompt: aiPrompt,           // Full prompt with AI instructions for generation
+          userPrompt: userPrompt,     // Clean prompt for database storage and dashboard display
+          length: selectedLength.length 
+        },
         {
           headers: {
             Authorization: `Bearer ${await getToken()}`, // Include auth token for protected route

@@ -51,7 +51,7 @@ const BlogTitles = () => {
     try {
       setLoading(true); // Show loading spinner
       // Create a detailed prompt for the AI with keyword and category context
-      const prompt = `Generate a blog title for the keyword ${input} in the category ${selectedCategory}`;
+      const prompt = `Generate a blog title for the keyword ${input} in the category ${selectedCategory}. `;
       // Make API call to backend to generate blog titles using AI
       const { data } = await axios.post(
         "/api/ai/generate-blog-title",

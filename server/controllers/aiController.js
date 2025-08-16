@@ -25,7 +25,7 @@ const AI = new OpenAI({
 export const generateArticle = async (req, res) => {
     try {
         const { userId } = req.auth(); // Get the user's ID from authentication
-        const { prompt, length } = req.body; // Get the prompt and length from the request
+        const { prompt, userPrompt, length } = req.body; // Get both prompts and length from the request
         const plan = req.plan; // User's plan (free or premium)
         const freeUsage = req.free_usage; // How many free uses the user has left
 
@@ -37,13 +37,13 @@ export const generateArticle = async (req, res) => {
             });
         }
 
-        // Ask the AI to generate an article
+        // Ask the AI to generate an article using the full prompt with instructions
         const response = await AI.chat.completions.create({
             model: "gemini-2.0-flash",
             messages: [
                 {
                     role: "user",
-                    content: prompt,
+                    content: prompt, // Use full prompt with AI instructions for generation
                 },
             ],
             temperature: 0.7,
@@ -52,10 +52,10 @@ export const generateArticle = async (req, res) => {
 
         const content = response.choices[0].message.content; // Get the article text from the AI response
 
-        // Save the article to the database
+        // Save the article to the database using the clean user prompt for display
         await sql`
             INSERT INTO creations (user_id, prompt, content, type)
-            VALUES (${userId}, ${prompt}, ${content}, 'article')
+            VALUES (${userId}, ${userPrompt || prompt}, ${content}, 'article')
         `;
 
         // If the user is free, increase their usage count
