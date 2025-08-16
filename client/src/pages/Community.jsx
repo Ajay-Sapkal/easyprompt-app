@@ -1,7 +1,7 @@
 import { useUser } from '@clerk/clerk-react';
 import React, { useState, useEffect } from 'react'
 import { dummyPublishedCreationData } from '../assets/assets';
-import { Heart, Users } from 'lucide-react';import axios from 'axios';
+import { Heart, Users, Download } from 'lucide-react';import axios from 'axios';
 import { useAuth } from "@clerk/clerk-react";
 import toast from 'react-hot-toast';
 
@@ -38,6 +38,28 @@ const Community = () => {
   const [animatingLike, setAnimatingLike] = useState(null);
   // Clerk authentication hook to get JWT tokens for API requests
   const { getToken } = useAuth();
+
+  // Download functionality for community images
+  const downloadImage = async (imageUrl, creationId) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `community-image-${creationId}-${Date.now()}.png`;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("Image downloaded successfully!");
+    } catch (err) {
+      toast.error("Failed to download image");
+    }
+  };
 
   // Function to fetch published creations from backend API with authentication
   const fetchCreations = async () => {
@@ -196,6 +218,20 @@ const Community = () => {
           <div key={index} className='relative group inline-block pl-3 pt-3 w-full sm:max-w-1/2 lg:max-w-1/3'>
             {/* Main creation image (content contains the image URL for published images) */}
             <img src={creation.content} alt="" className='w-full h-full object-cover rounded-lg' />
+
+            {/* Download button: positioned at top-right corner */}
+            <div className='absolute top-5 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10'>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  downloadImage(creation.content, creation.id);
+                }}
+                className='bg-black/60 hover:bg-black/80 text-white p-2 rounded-full transition-all duration-200 cursor-pointer hover:scale-110'
+                title='Download Image'
+              >
+                <Download className='w-4 h-4' />
+              </button>
+            </div>
 
             {/* 
               Overlay div: uses CSS 'group' classes for hover effects
