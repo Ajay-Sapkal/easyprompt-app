@@ -116,7 +116,7 @@ const ReviewResume = () => {
       </form>
 
       {/* Right column: Analysis results display area with height constraints */}
-      <div className="w-full max-w-2xl p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-[700px] max-h-[700px]">
+      <div className="w-full max-w-xl p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-[600px] max-h-[600px]">
         {/* Results section header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
