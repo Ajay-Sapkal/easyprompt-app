@@ -189,7 +189,7 @@ CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 
 # Server Configuration
-PORT=5000
+PORT=3000
 ```
 
 #### Client `.env`
@@ -229,7 +229,7 @@ npm install
 Terminal 1 (Server):
 ```bash
 cd server
-npm start
+npm run server
 ```
 
 Terminal 2 (Client):
@@ -240,7 +240,7 @@ npm run dev
 
 6. **Access the application**
 - Frontend: `http://localhost:5173`
-- Backend: `http://localhost:5000`
+- Backend: `http://localhost:3000`
 
 ## 📡 API Endpoints
 
